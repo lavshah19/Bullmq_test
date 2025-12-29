@@ -1,7 +1,9 @@
 import dotEnv from "dotenv"
 dotEnv.config();
 import { bookingData } from "./dummy_data/data";
-import { addBookingJob } from "./queue";
+
 import { startWorker } from "./worker";
+import { addBookingFlow } from "./queue";
 startWorker(); 
-addBookingJob(bookingData);
+addBookingFlow(bookingData);
+
