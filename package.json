@@ -1,0 +1,28 @@
+{
+  "name": "bullmq_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+  "build": "tsc",
+  "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lavshah19/Bullmq_test.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lavshah19/Bullmq_test/issues"
+  },
+  "homepage": "https://github.com/lavshah19/Bullmq_test#readme",
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
