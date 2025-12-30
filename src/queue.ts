@@ -1,6 +1,5 @@
-import dotenv from "dotenv";
-dotenv.config();
 
+import mongoose from "mongoose";
 import { FlowProducer } from "bullmq";
 import { redisConnection } from "./config/redis";
 import { JobChainBuilder } from "./utils/jobBuilder";
@@ -14,33 +13,45 @@ import {
 
 const flowProducer = new FlowProducer({ connection: redisConnection });
 
-export async function addBookingFlow(data: any): Promise<void> {
+export async function addBookingFlow(
+  data: any, 
+  bookingId?: string
+): Promise<{ jobCount: number; bookingId: string }> {
   const now = new Date();
+  const generatedBookingId = bookingId || new mongoose.Types.ObjectId().toString();
+  
   console.log("Scheduling booking flow at:", now.toISOString());
+  console.log("Booking ID:", generatedBookingId);
 
-  const builder = new JobChainBuilder();
+  const builder = new JobChainBuilder(now, generatedBookingId);
 
-  // Build job chain
-  scheduleBookingConfirmations(builder, data.bookingConfirmation, now);
-  scheduleFirstFollowUp(builder, data.firstFollowUp, now);
-  scheduleFinalFollowUp(builder, data.finalFollowUp, now);
-  scheduleFeedbackRequest(builder, data.feedbackRequest, now, data.feedbackRequestActive);
-  scheduleFollowUps(builder, data.followUp, now);
+  await scheduleBookingConfirmations(builder, data.bookingConfirmation, now);
+  await scheduleFirstFollowUp(builder, data.firstFollowUp, now);
+  await scheduleFinalFollowUp(builder, data.finalFollowUp, now);
+  await scheduleFeedbackRequest(builder, data.feedbackRequest, now, data.feedbackRequestActive);
+  await scheduleFollowUps(builder, data.followUp, now);
 
   const jobs = builder.getJobs();
   
-  if (jobs.length === 0) {
+  if (builder.getJobCount() === 0) {
     console.log("No jobs to add.");
-    return;
+    return { jobCount: 0, bookingId: generatedBookingId };
   }
 
   await flowProducer.add({
     name: "bookingRoot",
     queueName: "bookingQueue",
-    data: { startedAt: now.toISOString() },
+    data: { 
+      startedAt: now.toISOString(),
+      bookingId: generatedBookingId
+    },
     children: jobs,
   });
 
   console.log(`Booking flow scheduled with ${jobs.length} jobs in strict sequence`);
+  
+  return { 
+    jobCount: jobs.length, 
+    bookingId: generatedBookingId 
+  };
 }
-

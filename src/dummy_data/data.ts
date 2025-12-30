@@ -19,7 +19,7 @@ export const bookingData = {
   },
   finalFollowUp: {
     channel: ["Mail"],
-    timing: "0",
+    timing: "30",
     timingDuration: "minutes",
     template: "67736e823bda82e5cc96152f",
     _id: "67736e943bda82e5cc961555",

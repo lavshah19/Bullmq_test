@@ -1,84 +1,84 @@
+import { JobType } from "../const";
 import { calculateDelay } from "../utils/delayCalculator";
 import { JobChainBuilder } from "../utils/jobBuilder";
 
-export function scheduleBookingConfirmations(
+export async function scheduleBookingConfirmations(
   builder: JobChainBuilder,
   confirmations: any[],
   baseTime: Date
-): void {
+): Promise<void> {
   if (!confirmations?.length) return;
 
-  confirmations.forEach((conf: any) => {
+  for (const conf of confirmations) {
     const delay = calculateDelay(conf.timing, baseTime, conf.timingDuration);
-    builder.addJob({
-      name: `confirmation-${conf._id}`,
-      data: { type: "bookingConfirmation", item: conf },
-      queueName: "bookingQueue",
-      opts: {},
+    await builder.addJob({
+      jobName: `confirmation-${conf._id}`,
+      type: JobType.BookingConfirmation,
+      item: conf
     }, delay);
-  });
+  }
 }
 
-export function scheduleFirstFollowUp(
+export async function scheduleFirstFollowUp(
   builder: JobChainBuilder,
   followUp: any,
   baseTime: Date
-): void {
+): Promise<void> {
+  if (!followUp) return;
+
   const delay = calculateDelay(followUp.timing, baseTime, followUp.timingDuration);
-  builder.addJob({
-    name: "firstFollowUp",
-    data: { type: "firstFollowUp", item: followUp },
-    queueName: "bookingQueue",
-    opts: {},
+  await builder.addJob({
+    jobName: JobType.FirstFollowUp,
+    type: JobType.FirstFollowUp,
+    item: followUp
   }, delay);
 }
 
-export function scheduleFinalFollowUp(
+export async function scheduleFinalFollowUp(
   builder: JobChainBuilder,
   followUp: any,
   baseTime: Date
-): void {
+): Promise<void> {
+  if (!followUp) return;
+
   const delay = calculateDelay(followUp.timing, baseTime, followUp.timingDuration);
-  builder.addJob({
-    name: "finalFollowUp",
-    data: { type: "finalFollowUp", item: followUp },
-    queueName: "bookingQueue",
-    opts: {},
+  await builder.addJob({
+    jobName: 'finalFollowUp',
+    type: JobType.FinalFollowUp,
+    item: followUp
   }, delay);
 }
 
-export function scheduleFeedbackRequest(
+export async function scheduleFeedbackRequest(
   builder: JobChainBuilder,
   feedback: any,
   baseTime: Date,
   isActive: boolean
-): void {
-  if (!isActive) return;
-
+): Promise<void> {
+  if (!isActive || !feedback) return;
+  
   const delay = calculateDelay(feedback.timing, baseTime, feedback.timingDuration);
-  builder.addJob({
-    name: "feedbackRequest",
-    data: { type: "feedbackRequest", item: feedback },
-    queueName: "bookingQueue",
-    opts: {},
+  await builder.addJob({
+    jobName: 'feedbackRequest',
+    type: JobType.FeedbackRequest,
+    item: feedback
   }, delay);
 }
 
-export function scheduleFollowUps(
+export async function scheduleFollowUps(
   builder: JobChainBuilder,
   followUps: any[],
   baseTime: Date
-): void {
+): Promise<void> {
   if (!followUps?.length) return;
 
-  followUps.forEach((fu: any) => {
+  for (const fu of followUps) {
     const day = fu.day ?? null;
     const delay = calculateDelay(fu.timing, baseTime, fu.timingDuration, day);
-    builder.addJob({
-      name: `followUp-${fu._id}`,
-      data: { type: "followUp", item: fu },
-      queueName: "bookingQueue",
-      opts: {},
+    await builder.addJob({
+      jobName: `followUp-${fu._id}`,
+      type: JobType.FollowUp,
+      item: fu
     }, delay);
-  });
+  }
 }

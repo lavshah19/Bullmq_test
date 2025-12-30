@@ -13,7 +13,7 @@ export function calculateDelay(
   }
 
   if (timing.includes(":")) {
-    // Clock time: "10:00", "11:32"
+    
     const [h, m] = timing.split(":").map(Number);
     target = setHours(target, h);
     target = setMinutes(target, m);
@@ -24,7 +24,7 @@ export function calculateDelay(
       target = addDays(target, 1);
     }
   } else {
-    // Relative: "0", "15", "24"
+  
     const amount = parseInt(timing, 10);
     if (timingDuration === "minutes") {
       target = addMinutes(target, amount);

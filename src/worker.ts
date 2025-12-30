@@ -1,45 +1,52 @@
 import { Worker, Job } from "bullmq";
 import { redisConnection } from "./config/redis";
+import { JobDataService } from "./services/jobDataService";
+import { processJob } from "./services/processJobService";
 
 export const startWorker = () => {
   const worker = new Worker(
     "bookingQueue",
     async (job: Job) => {
-      const { type, item} = job.data;
+      // console.log("Processing job:", job);
+      const { jobDataId } = job.data;
+      // console.log("Job data ID:", jobDataId);
+      if (!jobDataId) {
+        console.error("No jobDataId provided for job:", job.name);
+        return;
+      }
+      const jobData = await JobDataService.markProcessing(jobDataId);
 
-      console.log(`Processing job: ${job.name} - Type: ${type}`);
-
-      switch (type) {
-        case "bookingConfirmation":
-          console.log("Sending Booking Confirmation:", item.channel[0], item.template);
-          // here you can send the booking confirmation email
-          break;
-        case "firstFollowUp":
-          console.log("Sending First FollowUp:", item.channel[0], item.template);
-          break;
-          // yesma pani same 
-        case "finalFollowUp":
-          console.log("Sending Final FollowUp:", item.channel[0], item.template);
-          break;
-        
-        case "feedbackRequest":
-          console.log("Sending Feedback Request:", item.channel[0], item.template);
-          break;
-        case "followUp":
-          console.log("Sending FollowUp message:", item.channel[0], item.timing, item.template);
-          break;
-        default:
-          console.log("Unknown job type:", job.data);
+      if (!jobData) {
+        throw new Error(`Job data not found: ${jobDataId}`);
+      }
+      try {
+        await processJob(jobData);
+        await JobDataService.markCompleted(jobDataId);
+        console.log(`Job ${job.name} completed successfully`);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        await JobDataService.markFailed(jobDataId, errorMessage);
+        throw error; 
       }
     },
-    { connection: redisConnection }
+    {
+      connection: redisConnection,
+      concurrency: 5,
+    }
   );
 
   worker.on("completed", (job) => {
-    console.log(`Job ${job.id} (${job.name}) completed`);
+    console.log(` Job ${job.id} (${job.name}) completed`);
   });
 
   worker.on("failed", (job, err) => {
-    console.error(`Job ${job?.id} (${job?.name}) failed:`, err);
+    console.error(`Job ${job?.id} (${job?.name}) failed:`, err.message);
   });
+
+  console.log("Worker started and listening for jobs...");
 };
+
+
+
+
